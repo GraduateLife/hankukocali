@@ -42,10 +42,16 @@ window.App = (function () {
     // Bind buttons
     document.getElementById('btn-clear').addEventListener('click', function () {
       self.canvas.clear();
+      self._btnCalibrate.classList.add('hidden');
     });
 
     document.getElementById('btn-submit').addEventListener('click', function () {
       self._onSubmit();
+    });
+
+    this._btnCalibrate = document.getElementById('btn-calibrate');
+    this._btnCalibrate.addEventListener('click', function () {
+      self._onCalibrate();
     });
 
     var strokeSlider = document.getElementById('stroke-slider');
@@ -108,18 +114,39 @@ window.App = (function () {
 
     this.notification.show(display, result.tier, 2000);
 
-    // Correct: auto advance after delay
     var isCorrect = result.tier === 'success' || result.tier === 'good';
+
+    // Hide calibrate button on correct, show on failure
+    this._btnCalibrate.classList.toggle('hidden', isCorrect);
 
     if (isCorrect) {
       setTimeout(function () {
         self._advance();
       }, 1800);
-    } else {
-      // Wrong: clear canvas after notification fades, let user retry
+    }
+    // Don't auto-clear on failure so user can try calibrate
+  };
+
+  App.prototype._onCalibrate = function () {
+    var self = this;
+
+    if (this.canvas.isEmpty()) return;
+
+    var char = this._getCurrentChar();
+    var result = this.recognizer.calibratedCompare(this.canvas, char.korean);
+
+    var display = char.korean + '  校准后: ' + result.message +
+      '  (' + Math.round(result.score * 100) + '%)';
+
+    this.notification.show(display, result.tier, 2500);
+
+    var isCorrect = result.tier === 'success' || result.tier === 'good';
+
+    if (isCorrect) {
+      this._btnCalibrate.classList.add('hidden');
       setTimeout(function () {
-        self.canvas.clear();
-      }, 2000);
+        self._advance();
+      }, 2200);
     }
   };
 

@@ -139,6 +139,72 @@ window.CharacterRecognizer = (function () {
     return iou * 0.6 + agreementRatio * 0.4;
   };
 
+  // Try shifting and scaling the user grid to find best match
+  CharacterRecognizer.prototype.calibratedCompare = function (drawingCanvas, targetChar) {
+    var dims = drawingCanvas.getDimensions();
+    var dpr = window.devicePixelRatio || 1;
+    var pw = Math.round(dims.width * dpr);
+    var ph = Math.round(dims.height * dpr);
+
+    var userCtx = drawingCanvas.getCanvasElement().getContext('2d');
+    var userImageData = userCtx.getImageData(0, 0, pw, ph);
+
+    this._offscreen.width = pw;
+    this._offscreen.height = ph;
+    this._offCtx.fillStyle = '#ffffff';
+    this._offCtx.fillRect(0, 0, pw, ph);
+    var fontSize = Math.min(pw, ph) * 0.7;
+    this._offCtx.font = '700 ' + fontSize + 'px "Noto Sans KR", sans-serif';
+    this._offCtx.fillStyle = '#111111';
+    this._offCtx.textAlign = 'center';
+    this._offCtx.textBaseline = 'middle';
+    this._offCtx.fillText(targetChar, pw / 2, ph / 2);
+    var refImageData = this._offCtx.getImageData(0, 0, pw, ph);
+
+    var refGrid = this._toGrid(refImageData, pw, ph);
+    var userGrid = this._toGrid(userImageData, pw, ph);
+    if (!userGrid || !refGrid) {
+      return { score: 0, tier: 'danger', message: '再练习一下' };
+    }
+
+    var bestScore = this._computeSimilarity(userGrid, refGrid);
+
+    // Try different scales and offsets
+    var scales = [0.75, 0.85, 0.95, 1.05, 1.15, 1.25];
+    var offsets = [-4, -2, 0, 2, 4];
+    var G = GRID_SIZE;
+
+    for (var si = 0; si < scales.length; si++) {
+      for (var dx = 0; dx < offsets.length; dx++) {
+        for (var dy = 0; dy < offsets.length; dy++) {
+          var transformed = this._transformGrid(userGrid, scales[si], offsets[dx], offsets[dy]);
+          var s = this._computeSimilarity(transformed, refGrid);
+          if (s > bestScore) bestScore = s;
+        }
+      }
+    }
+
+    return this._classify(bestScore);
+  };
+
+  CharacterRecognizer.prototype._transformGrid = function (grid, scale, offsetX, offsetY) {
+    var G = GRID_SIZE;
+    var result = new Uint8Array(G * G);
+    var center = G / 2;
+
+    for (var gy = 0; gy < G; gy++) {
+      for (var gx = 0; gx < G; gx++) {
+        // Map destination back to source
+        var srcX = Math.round((gx - center - offsetX) / scale + center);
+        var srcY = Math.round((gy - center - offsetY) / scale + center);
+        if (srcX >= 0 && srcX < G && srcY >= 0 && srcY < G) {
+          result[gy * G + gx] = grid[srcY * G + srcX];
+        }
+      }
+    }
+    return result;
+  };
+
   CharacterRecognizer.prototype._classify = function (score) {
     if (score >= SCORE_EXCELLENT) {
       return { score: score, tier: 'success', message: '太棒了！ Perfect!' };
