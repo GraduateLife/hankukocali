@@ -182,6 +182,20 @@ body {
   opacity: 0.8;
 }
 
+.btn-calibrate {
+  background: #8e44ad;
+  border-color: #8e44ad;
+  color: #fff;
+}
+
+.btn-calibrate:active {
+  background: #7d3c98;
+}
+
+.btn.hidden {
+  display: none;
+}
+
 .btn-primary {
   background: var(--primary);
   border-color: var(--primary);
