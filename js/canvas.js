@@ -45,7 +45,7 @@ window.DrawingCanvas = (function () {
   };
 
   DrawingCanvas.prototype._applyStrokeStyle = function () {
-    this.ctx.lineWidth = 6;
+    this.ctx.lineWidth = 14;
     this.ctx.lineCap = 'round';
     this.ctx.lineJoin = 'round';
     this.ctx.strokeStyle = '#111111';
