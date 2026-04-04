@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>한국어 캘리 - Korean Handwriting Practice</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header id="header">
+    <span id="level-label">Level 1</span>
+    <span id="progress">1 / 14</span>
+    <button id="guide-toggle" title="Toggle guide">👁</button>
+  </header>
+
+  <main id="canvas-container">
+    <canvas id="drawing-canvas"></canvas>
+    <div id="notification" class="hidden"></div>
+  </main>
+
+  <div id="button-row">
+    <button id="btn-clear" class="btn">清除</button>
+    <button id="btn-submit" class="btn btn-primary">提交</button>
+  </div>
+
+  <footer id="romanization-bar">
+    <div id="roman-label">Pronunciation</div>
+    <div id="roman-text">g / k</div>
+  </footer>
+
+  <script src="js/characters.js"></script>
+  <script src="js/canvas.js"></script>
+  <script src="js/recognition.js"></script>
+  <script src="js/notification.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
