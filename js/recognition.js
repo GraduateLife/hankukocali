@@ -3,9 +3,9 @@ window.CharacterRecognizer = (function () {
 
   var GRID_SIZE = 32;
   var INK_THRESHOLD = 180;
-  var SCORE_EXCELLENT = 0.80;
-  var SCORE_GOOD = 0.65;
-  var SCORE_ALMOST = 0.50;
+  var SCORE_EXCELLENT = 0.70;
+  var SCORE_GOOD = 0.55;
+  var SCORE_ALMOST = 0.40;
 
   function CharacterRecognizer() {
     this._offscreen = document.createElement('canvas');
