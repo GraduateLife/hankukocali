@@ -123,10 +123,44 @@ body {
 #notification.warning { background: var(--warning); }
 #notification.danger { background: var(--danger); }
 
+#stroke-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 12px;
+  flex-shrink: 0;
+}
+
+#stroke-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  min-width: 80px;
+}
+
+#stroke-slider {
+  flex: 1;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--border);
+  border-radius: 3px;
+  outline: none;
+}
+
+#stroke-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--primary);
+  cursor: pointer;
+}
+
 #button-row {
   display: flex;
   gap: 12px;
-  padding: 8px 8px;
+  padding: 4px 8px 8px;
   flex-shrink: 0;
 }
 

@@ -8,6 +8,7 @@ window.DrawingCanvas = (function () {
     this.isDrawing = false;
     this.showGuide = true;
     this.currentChar = '';
+    this.strokeWidth = 20;
     this._resizeObserver = null;
 
     this._onPointerDown = this._onPointerDown.bind(this);
@@ -45,7 +46,7 @@ window.DrawingCanvas = (function () {
   };
 
   DrawingCanvas.prototype._applyStrokeStyle = function () {
-    this.ctx.lineWidth = 14;
+    this.ctx.lineWidth = this.strokeWidth;
     this.ctx.lineCap = 'round';
     this.ctx.lineJoin = 'round';
     this.ctx.strokeStyle = '#111111';
@@ -136,6 +137,11 @@ window.DrawingCanvas = (function () {
   DrawingCanvas.prototype.setCharacter = function (char) {
     this.currentChar = char;
     this.clear();
+  };
+
+  DrawingCanvas.prototype.setStrokeWidth = function (w) {
+    this.strokeWidth = w;
+    this._applyStrokeStyle();
   };
 
   DrawingCanvas.prototype.setGuide = function (on) {

@@ -48,6 +48,14 @@ window.App = (function () {
       self._onSubmit();
     });
 
+    var strokeSlider = document.getElementById('stroke-slider');
+    var strokeValue = document.getElementById('stroke-value');
+    strokeSlider.addEventListener('input', function () {
+      var w = parseInt(this.value, 10);
+      strokeValue.textContent = w;
+      self.canvas.setStrokeWidth(w);
+    });
+
     document.getElementById('guide-toggle').addEventListener('click', function () {
       self.guideOn = !self.guideOn;
       self.canvas.setGuide(self.guideOn);
