@@ -1,209 +1,192 @@
+/** App controller - coordinates state, canvas, recognition, and UI */
 window.App = (function () {
   'use strict';
 
-  var STORAGE_KEY = 'hankukocali_progress';
+  // --- DOM references (collected once) ---
+  var DOM = {};
+
+  function cacheDom() {
+    DOM.levelLabel = document.getElementById('level-label');
+    DOM.progress = document.getElementById('progress');
+    DOM.romanText = document.getElementById('roman-text');
+    DOM.btnClear = document.getElementById('btn-clear');
+    DOM.btnSubmit = document.getElementById('btn-submit');
+    DOM.btnCalibrate = document.getElementById('btn-calibrate');
+    DOM.guideToggle = document.getElementById('guide-toggle');
+    DOM.strokeSlider = document.getElementById('stroke-slider');
+    DOM.strokeValue = document.getElementById('stroke-value');
+    DOM.canvasContainer = document.getElementById('canvas-container');
+    DOM.drawingCanvas = document.getElementById('drawing-canvas');
+    DOM.notification = document.getElementById('notification');
+  }
+
+  // --- App constructor ---
 
   function App() {
+    this.state = null;
     this.canvas = null;
     this.recognizer = null;
     this.notification = null;
-    this.currentLevel = 0;
-    this.currentCharIndex = 0;
-    this.guideOn = true;
+    this._pendingTimer = null;
   }
 
   App.prototype.init = function () {
     var self = this;
-
-    // Wait for Korean font to load
     if (document.fonts && document.fonts.ready) {
-      document.fonts.ready.then(function () {
-        self._setup();
-      });
+      document.fonts.ready.then(function () { self._boot(); });
     } else {
-      self._setup();
+      this._boot();
     }
   };
 
-  App.prototype._setup = function () {
-    var self = this;
+  App.prototype._boot = function () {
+    cacheDom();
 
-    this.canvas = new window.DrawingCanvas(
-      document.getElementById('canvas-container'),
-      document.getElementById('drawing-canvas')
-    );
-
+    this.state = new window.GameState(window.CHARACTERS);
+    this.canvas = new window.DrawingCanvas(DOM.canvasContainer, DOM.drawingCanvas);
     this.recognizer = new window.CharacterRecognizer();
-    this.notification = new window.Notification_(document.getElementById('notification'));
+    this.notification = new window.Notification_(DOM.notification);
 
-    // Load saved progress
-    this._loadProgress();
-
-    // Bind buttons
-    document.getElementById('btn-clear').addEventListener('click', function () {
-      self.canvas.clear();
-      self._btnCalibrate.classList.add('hidden');
-    });
-
-    document.getElementById('btn-submit').addEventListener('click', function () {
-      self._onSubmit();
-    });
-
-    this._btnCalibrate = document.getElementById('btn-calibrate');
-    this._btnCalibrate.addEventListener('click', function () {
-      self._onCalibrate();
-    });
-
-    var strokeSlider = document.getElementById('stroke-slider');
-    var strokeValue = document.getElementById('stroke-value');
-    strokeSlider.addEventListener('input', function () {
-      var w = parseInt(this.value, 10);
-      strokeValue.textContent = w;
-      self.canvas.setStrokeWidth(w);
-    });
-
-    document.getElementById('guide-toggle').addEventListener('click', function () {
-      self.guideOn = !self.guideOn;
-      self.canvas.setGuide(self.guideOn);
-      this.classList.toggle('off', !self.guideOn);
-    });
-
-    // Load first character
-    this._loadCharacter();
+    this._bindEvents();
+    this._renderCurrentChar();
   };
 
-  App.prototype._getCurrentGroup = function () {
-    return window.CHARACTERS[this.currentLevel];
-  };
+  // --- Event binding (pure delegation, no logic) ---
 
-  App.prototype._getCurrentChar = function () {
-    var group = this._getCurrentGroup();
-    return group.chars[this.currentCharIndex];
-  };
-
-  App.prototype._loadCharacter = function () {
-    var group = this._getCurrentGroup();
-    var char = this._getCurrentChar();
-
-    // Update header
-    document.getElementById('level-label').textContent =
-      'Level ' + group.level + ': ' + group.label;
-    document.getElementById('progress').textContent =
-      (this.currentCharIndex + 1) + ' / ' + group.chars.length;
-
-    // Update romanization
-    document.getElementById('roman-text').textContent = char.roman;
-
-    // Set canvas character (also clears)
-    this.canvas.setCharacter(char.korean);
-  };
-
-  App.prototype._onSubmit = function () {
+  App.prototype._bindEvents = function () {
     var self = this;
 
+    DOM.btnClear.addEventListener('click', function () {
+      self._handleClear();
+    });
+
+    DOM.btnSubmit.addEventListener('click', function () {
+      self._handleSubmit();
+    });
+
+    DOM.btnCalibrate.addEventListener('click', function () {
+      self._handleCalibrate();
+    });
+
+    DOM.strokeSlider.addEventListener('input', function () {
+      self._handleStrokeChange(parseInt(this.value, 10));
+    });
+
+    DOM.guideToggle.addEventListener('click', function () {
+      self._handleGuideToggle();
+    });
+  };
+
+  // --- Event handlers ---
+
+  App.prototype._handleClear = function () {
+    this._cancelPending();
+    this.canvas.clear();
+    this._setCalibrateVisible(false);
+  };
+
+  App.prototype._handleSubmit = function () {
     if (this.canvas.isEmpty()) {
       this.notification.show('请先写一个字！', 'warning', 1500);
       return;
     }
 
-    var char = this._getCurrentChar();
+    var char = this.state.getCurrentChar();
     var result = this.recognizer.compare(this.canvas, char.korean);
 
-    var display = char.korean + '  ' + result.message +
-      '  (' + Math.round(result.score * 100) + '%)';
-
-    this.notification.show(display, result.tier, 2000);
-
+    this._showResult(char.korean, result);
     var isCorrect = result.tier === 'success' || result.tier === 'good';
 
-    // Hide calibrate button on correct, show on failure
-    this._btnCalibrate.classList.toggle('hidden', isCorrect);
+    this._setCalibrateVisible(!isCorrect);
 
     if (isCorrect) {
-      setTimeout(function () {
-        self._advance();
-      }, 1800);
+      this._scheduleAdvance(1800);
     }
-    // Don't auto-clear on failure so user can try calibrate
   };
 
-  App.prototype._onCalibrate = function () {
-    var self = this;
-
+  App.prototype._handleCalibrate = function () {
     if (this.canvas.isEmpty()) return;
 
-    var char = this._getCurrentChar();
+    var char = this.state.getCurrentChar();
     var result = this.recognizer.calibratedCompare(this.canvas, char.korean);
 
-    var display = char.korean + '  校准后: ' + result.message +
-      '  (' + Math.round(result.score * 100) + '%)';
-
-    this.notification.show(display, result.tier, 2500);
-
+    this._showResult(char.korean, result, '校准后: ');
     var isCorrect = result.tier === 'success' || result.tier === 'good';
 
     if (isCorrect) {
-      this._btnCalibrate.classList.add('hidden');
-      setTimeout(function () {
-        self._advance();
-      }, 2200);
+      this._setCalibrateVisible(false);
+      this._scheduleAdvance(2200);
     }
   };
 
-  App.prototype._advance = function () {
-    var group = this._getCurrentGroup();
+  App.prototype._handleStrokeChange = function (width) {
+    DOM.strokeValue.textContent = width;
+    this.canvas.setStrokeWidth(width);
+  };
 
-    if (this.currentCharIndex + 1 < group.chars.length) {
-      // Next character in same level
-      this.currentCharIndex++;
-    } else if (this.currentLevel + 1 < window.CHARACTERS.length) {
-      // Next level
-      this.currentLevel++;
-      this.currentCharIndex = 0;
-      this.notification.show(
-        'Level ' + window.CHARACTERS[this.currentLevel].level + ' 开始！',
-        'good', 2000
-      );
-    } else {
-      // All done!
-      this.currentLevel = 0;
-      this.currentCharIndex = 0;
-      this.notification.show('全部完成！从头开始 🎉', 'success', 3000);
+  App.prototype._handleGuideToggle = function () {
+    var isOn = DOM.guideToggle.classList.toggle('off');
+    this.canvas.setGuide(!isOn);
+  };
+
+  // --- Game flow ---
+
+  App.prototype._scheduleAdvance = function (delay) {
+    var self = this;
+    this._cancelPending();
+    this._pendingTimer = setTimeout(function () {
+      self._pendingTimer = null;
+      self._doAdvance();
+    }, delay);
+  };
+
+  App.prototype._cancelPending = function () {
+    if (this._pendingTimer) {
+      clearTimeout(this._pendingTimer);
+      this._pendingTimer = null;
+    }
+  };
+
+  App.prototype._doAdvance = function () {
+    var result = this.state.advance();
+
+    if (result === 'next_level') {
+      var group = this.state.getCurrentGroup();
+      this.notification.show('Level ' + group.level + ' 开始！', 'good', 2000);
+    } else if (result === 'all_done') {
+      this.notification.show('全部完成！从头开始', 'success', 3000);
     }
 
-    this._saveProgress();
-    this._loadCharacter();
+    this._renderCurrentChar();
   };
 
-  App.prototype._saveProgress = function () {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        level: this.currentLevel,
-        charIndex: this.currentCharIndex
-      }));
-    } catch (e) { /* localStorage may be unavailable */ }
+  // --- UI updates ---
+
+  App.prototype._renderCurrentChar = function () {
+    var group = this.state.getCurrentGroup();
+    var char = this.state.getCurrentChar();
+
+    DOM.levelLabel.textContent = 'Level ' + group.level + ': ' + group.label;
+    DOM.progress.textContent = (this.state.currentCharIndex + 1) + ' / ' + group.chars.length;
+    DOM.romanText.textContent = char.roman;
+
+    this.canvas.setCharacter(char.korean);
+    this._setCalibrateVisible(false);
   };
 
-  App.prototype._loadProgress = function () {
-    try {
-      var saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        var data = JSON.parse(saved);
-        if (data.level < window.CHARACTERS.length) {
-          this.currentLevel = data.level;
-          var group = window.CHARACTERS[this.currentLevel];
-          if (data.charIndex < group.chars.length) {
-            this.currentCharIndex = data.charIndex;
-          }
-        }
-      }
-    } catch (e) { /* ignore */ }
+  App.prototype._showResult = function (korean, result, prefix) {
+    var display = korean + '  ' + (prefix || '') + result.message +
+      '  (' + Math.round(result.score * 100) + '%)';
+    this.notification.show(display, result.tier, 2000);
+  };
+
+  App.prototype._setCalibrateVisible = function (visible) {
+    DOM.btnCalibrate.classList.toggle('hidden', !visible);
   };
 
   return App;
 })();
 
-// Start the app
 document.addEventListener('DOMContentLoaded', function () {
   new window.App().init();
 });
