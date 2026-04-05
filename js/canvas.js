@@ -60,6 +60,16 @@ window.DrawingCanvas = (function () {
     return { width: rect.width, height: rect.height };
   };
 
+  DrawingCanvas.prototype.toThumbnail = function (size) {
+    size = size || 80;
+    var tmp = document.createElement('canvas');
+    tmp.width = size;
+    tmp.height = size;
+    var tmpCtx = tmp.getContext('2d');
+    tmpCtx.drawImage(this.canvas, 0, 0, size, size);
+    return tmp.toDataURL('image/png');
+  };
+
   // --- Private: setup ---
 
   DrawingCanvas.prototype._bindEvents = function () {

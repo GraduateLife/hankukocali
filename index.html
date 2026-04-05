@@ -11,9 +11,10 @@
 </head>
 <body>
   <header id="header">
+    <button id="menu-btn" title="Menu">&#9776;</button>
     <span id="level-label">Level 1</span>
     <span id="progress">1 / 14</span>
-    <button id="guide-toggle" title="Toggle guide">👁</button>
+    <button id="guide-toggle" title="Toggle guide">&#128065;</button>
   </header>
 
   <main id="canvas-container">
@@ -37,11 +38,33 @@
     <div id="roman-text">g / k</div>
   </footer>
 
+  <!-- Menu overlay -->
+  <div id="menu-overlay" class="hidden">
+    <div id="menu-panel">
+      <div id="menu-header">
+        <h2>Menu</h2>
+        <button id="menu-close">&#10005;</button>
+      </div>
+      <div id="menu-tabs">
+        <button class="menu-tab active" data-tab="gallery">Gallery</button>
+        <button class="menu-tab" data-tab="settings">Settings</button>
+      </div>
+      <div id="menu-content">
+        <div id="gallery-view"></div>
+        <div id="settings-view" class="hidden"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/storage.js"></script>
   <script src="js/characters.js"></script>
   <script src="js/state.js"></script>
   <script src="js/canvas.js"></script>
   <script src="js/recognition.js"></script>
   <script src="js/notification.js"></script>
+  <script src="js/menu.js"></script>
+  <script src="js/gallery.js"></script>
+  <script src="js/settings.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
