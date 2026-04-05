@@ -248,6 +248,7 @@ body {
   z-index: 100;
   display: flex;
   justify-content: flex-start;
+  overflow: hidden;
 }
 
 #menu-overlay.hidden { display: none; }
@@ -327,6 +328,7 @@ body {
 #menu-content {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -417,41 +419,51 @@ body {
 /* ========== Settings ========== */
 
 .settings-section {
-  padding: 12px;
+  padding: 10px;
   border-bottom: 1px solid var(--border);
 }
 
 .settings-level-title {
   font-weight: 700;
-  font-size: 0.9rem;
-  padding: 8px 4px;
+  font-size: 0.85rem;
+  padding: 6px 2px;
   color: var(--text);
 }
 
-.settings-char-row {
+.settings-grid {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.settings-cell {
+  width: calc(33.333% - 4px);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
   padding: 6px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
 }
 
 .settings-korean {
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   font-weight: 700;
-  width: 36px;
-  text-align: center;
-  flex-shrink: 0;
 }
 
 .settings-roman-input {
-  flex: 1;
-  background: var(--surface);
+  width: 100%;
+  background: var(--bg);
   border: 1px solid var(--border);
   color: var(--text);
-  padding: 8px 10px;
-  border-radius: 8px;
-  font-size: 0.9rem;
+  padding: 4px 6px;
+  border-radius: 6px;
+  font-size: 0.75rem;
   font-family: inherit;
+  text-align: center;
   outline: none;
 }
 
@@ -459,55 +471,60 @@ body {
   border-color: var(--primary);
 }
 
+.settings-roman-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.settings-custom .settings-level-title {
+  color: var(--primary);
+}
+
 .settings-add-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 4px 4px;
-  margin-top: 4px;
-  border-top: 1px dashed var(--border);
+  gap: 6px;
+  padding: 4px 0;
 }
 
 .settings-new-korean {
-  width: 60px;
+  width: 50px;
   background: var(--surface);
   border: 1px solid var(--border);
   color: var(--text);
-  padding: 8px;
+  padding: 8px 4px;
   border-radius: 8px;
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-family: inherit;
   text-align: center;
   outline: none;
+  flex-shrink: 0;
 }
 
-.settings-new-korean:focus {
-  border-color: var(--primary);
-}
+.settings-new-korean:focus { border-color: var(--primary); }
 
 .settings-new-roman {
   flex: 1;
+  min-width: 0;
   background: var(--surface);
   border: 1px solid var(--border);
   color: var(--text);
-  padding: 8px 10px;
+  padding: 8px 6px;
   border-radius: 8px;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-family: inherit;
   outline: none;
 }
 
-.settings-new-roman:focus {
-  border-color: var(--primary);
-}
+.settings-new-roman:focus { border-color: var(--primary); }
 
 .settings-add-btn {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   background: var(--primary);
   border: none;
   color: #fff;
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   font-weight: 700;
   border-radius: 8px;
   cursor: pointer;
@@ -517,9 +534,7 @@ body {
   justify-content: center;
 }
 
-.settings-add-btn:active {
-  background: var(--primary-hover);
-}
+.settings-add-btn:active { background: var(--primary-hover); }
 
 /* ========== Responsive ========== */
 

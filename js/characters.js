@@ -93,9 +93,9 @@ window.CharacterManager = (function () {
   CharacterManager.prototype._buildCharacters = function () {
     var chars = JSON.parse(JSON.stringify(DEFAULT_CHARACTERS));
     var custom = this._storage.loadCustomChars();
-    if (!custom) return chars;
+    if (!custom) custom = {};
 
-    // Apply roman edits
+    // Apply roman edits to default levels
     if (custom.romanEdits) {
       for (var key in custom.romanEdits) {
         var parts = key.split('_');
@@ -107,15 +107,15 @@ window.CharacterManager = (function () {
       }
     }
 
-    // Append added characters
-    if (custom.addedChars) {
-      for (var i = 0; i < custom.addedChars.length; i++) {
-        var added = custom.addedChars[i];
-        var levelIdx = added.levelIndex;
-        if (chars[levelIdx]) {
-          chars[levelIdx].chars.push({ korean: added.korean, roman: added.roman, custom: true });
-        }
-      }
+    // Append custom level if it has characters
+    if (custom.customLevel && custom.customLevel.length > 0) {
+      chars.push({
+        level: chars.length + 1,
+        label: 'Custom',
+        chars: custom.customLevel.map(function (c) {
+          return { korean: c.korean, roman: c.roman, custom: true };
+        })
+      });
     }
 
     return chars;
@@ -126,19 +126,25 @@ window.CharacterManager = (function () {
   };
 
   CharacterManager.prototype.updateRoman = function (levelIndex, charIndex, newRoman) {
-    var custom = this._storage.loadCustomChars() || { romanEdits: {}, addedChars: [] };
+    var custom = this._storage.loadCustomChars() || { romanEdits: {}, customLevel: [] };
     if (!custom.romanEdits) custom.romanEdits = {};
     custom.romanEdits[levelIndex + '_' + charIndex] = newRoman;
     this._storage.saveCustomChars(custom);
     this.characters[levelIndex].chars[charIndex].roman = newRoman;
   };
 
-  CharacterManager.prototype.addChar = function (levelIndex, korean, roman) {
-    var custom = this._storage.loadCustomChars() || { romanEdits: {}, addedChars: [] };
-    if (!custom.addedChars) custom.addedChars = [];
-    custom.addedChars.push({ levelIndex: levelIndex, korean: korean, roman: roman });
+  CharacterManager.prototype.addCustomChar = function (korean, roman) {
+    var custom = this._storage.loadCustomChars() || { romanEdits: {}, customLevel: [] };
+    if (!custom.customLevel) custom.customLevel = [];
+    custom.customLevel.push({ korean: korean, roman: roman });
     this._storage.saveCustomChars(custom);
-    this.characters[levelIndex].chars.push({ korean: korean, roman: roman, custom: true });
+    this.reload();
+  };
+
+  CharacterManager.prototype.getCustomLevel = function () {
+    var custom = this._storage.loadCustomChars();
+    if (!custom || !custom.customLevel || custom.customLevel.length === 0) return null;
+    return { chars: custom.customLevel };
   };
 
   CharacterManager.prototype.getDefaultCharacters = function () {
